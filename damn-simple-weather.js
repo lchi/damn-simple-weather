@@ -9,6 +9,10 @@ var cache = {
   date: Date.today()
 };
 
+app.get('/', function(req, res){
+    res.send("Use /(zipcode) to get weather for your zipcode. ie: http://[myurl.com]/10027");
+});
+
 app.get('/:zip', function(req, res){
     get_weather(req.params.zip, function (error, weather) {
         if(Date.compare(Date.today(), cache.date) !== 0) {
