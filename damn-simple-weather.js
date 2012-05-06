@@ -74,5 +74,5 @@ function weather_api_str(zip) {
     return "http://graphical.weather.gov/xml/sample_products/browser_interface/ndfdXMLclient.php?zipCodeList=" + zip + "&product=time-series&begin=" + Date.today().toFormat("YYYY-MM-DD") + "&end=" + Date.tomorrow().toFormat("YYYY-MM-DD") + "&maxt=maxt&mint=mint&pop12=pop12"
 }
 
-app.listen(38317);
+app.listen(process.env.PORT || 6767);
 
