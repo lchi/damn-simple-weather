@@ -46,7 +46,7 @@ function get_weather(zip, callback) {
                     callback("Parser error: " + parser_error);
                 } else if(result.error) {
                     callback("API error " + result.error);
-                } else {
+                } else if(result) {
                     var result_params = result.data.parameters;
                     var max_temp = parseInt(result_params.temperature[0].value);
                     var min_temp = parseInt(result_params.temperature[1].value);
@@ -61,6 +61,8 @@ function get_weather(zip, callback) {
                         mean: mean_temp,
                         precip: precip_prob
                     });
+                } else {
+                  res.send("Zip code not found??");
                 }
             });
         } else {
