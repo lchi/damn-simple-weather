@@ -1,6 +1,6 @@
 {
   "name": "damn-simple-weather",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "dependencies": {
     "express": "2.5.9",
     "request": "2.9.202",
