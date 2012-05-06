@@ -1,0 +1,3 @@
+A simple weather app that tells you what to wear.
+
+There's a plan to put this on Heroku and add memoization sometime...
