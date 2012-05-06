@@ -1,0 +1,10 @@
+{
+  "name": "damn-simple-weather",
+  "version": "0.0.1",
+  "dependencies": {
+    "express": "2.5.9",
+    "request": "2.9.202",
+    "libxml-to-js": "0.3.10",
+    "date-utils": "1.2.10"
+  }
+}
