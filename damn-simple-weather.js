@@ -51,7 +51,7 @@ function get_weather(res, zip, callback) {
                     callback(zip, res, "Parser error: " + parser_error);
                 } else if(result.error) {
                     callback(zip, res, "API error " + result.error);
-                } else if(result) {
+                } else if(result && result.data) {
                     var result_params = result.data.parameters;
 
                     var precip_prob;
