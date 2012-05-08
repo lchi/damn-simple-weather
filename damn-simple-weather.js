@@ -37,112 +37,103 @@ function render_weather(zip, res, error, weather) {
     if(error) {
         res.send(error);
     } else {
-        if (cache['z' + zip] !== undefined) {
-            res.send(cache['z' + zip]);
-        } else {
-            res.render("weather_for_zip", {
-              weather: weather,
-              zip: zip,
-              today: Date.today().toFormat("YYYY-MM-DD")
-            });
-        }
+        res.render("weather_for_zip", {
+          weather: weather,
+          zip: zip,
+          today: Date.today().toFormat("YYYY-MM-DD")
+        });
     }
 }
 
 function get_weather(res, zip, callback) {
-    request(NOAA_weather_api_str(zip), function (error, response, body) {
-        if(!error && response.statusCode == 200) {
-            xml_parser(body, function (parser_error, result) {
-                if(parser_error) {
-                    callback(zip, res, "Parser error: " + parser_error);
-                } else if(result.error) {
-                    callback(zip, res, "API error " + result.error);
-                } else if(result && result.data) {
-                    callback(zip, res, null, parse_NOAA_response(result));
-                } else {
-                    callback(zip, res, "Zip code not found??");
-                }
-            });
-        } else {
-            callback(zip, res, "There was an error" + error);
-        }
-    });
+    if(cache["z" + zip] !== undefined) {
+        console.log("cache hit");
+        callback(zip, res, null, cache["z" + zip]);
+    } else {
+        request(NOAA_weather_api_str(zip), function (error, response, body) {
+            if(!error && response.statusCode == 200) {
+                xml_parser(body, function (parser_error, result) {
+                    if(parser_error) {
+                        callback(zip, res, "Parser error: " + parser_error);
+                    } else if(result.error) {
+                        callback(zip, res, "API error " + result.error);
+                    } else if(result && result.data) {
+                        console.log("cache miss");
+                        weather = parse_NOAA_response(result);
+                        cache["z" + zip] = weather;
+                        callback(zip, res, null, weather);
+                    } else {
+                        callback(zip, res, "Zip code not found??");
+                    }
+                });
+            } else {
+                callback(zip, res, "There was an error" + error);
+            }
+        });
+    }
 }
 
 function parse_NOAA_response(response) {
-    var resp_precip_obj = response.data.parameters["probability-of-precipitation"];
+    var resp_precip_obj = response.data.parameters["probability-of-precipitation"].value;
     var resp_temperature_obj = response.data.parameters["temperature"];
 
-    //console.log(response_params);
-    //console.log(isArray(response_params["probability-of-precipitation"]).value);
-    //console.log(isArray(response_params.temperature));
-
     var precip_prob_obj = {
-        precip_prob: 0
+        precip: 0
     };
     if(is_array(resp_precip_obj)) {
         var precip_count = 0;
-        for(var precip_chance in resp_precip_obj){
+        for(var i = 0; i < resp_precip_obj.length; i++){
+            precip_chance = parseInt(resp_precip_obj[i]["#"]);
+            precip_prob_obj["precip"] += precip_chance;
             precip_count++;
-            precip_prob_obj["precip"] += precip_chance["#"];
         }
-        precip_prob_obj["precip"] /= precip_count;
+        precip_prob_obj["precip"] = Math.round(precip_prob_obj["precip"] / precip_count);
     } else {
-        precip_prob_obj["precip"] = resp_precip_obj.value;
-        console.log(resp_precip_obj);
-        console.log(precip_prob_obj);
+        precip_prob_obj["precip"] = resp_precip_obj;
     }
 
     var temperature_obj = {};
     if(is_array(resp_temperature_obj)) {
-        var min_temp_count = 0;
-        var max_temp_count = 0;
         temperature_obj["min_temp"] = 0;
         temperature_obj["max_temp"] = 0;
-        for(var temp_value in resp_temperature_obj) {
+
+        for(var i = 0; i < resp_temperature_obj.length; i++) {
+            temp_value = resp_temperature_obj[i];
+
+            var temp_to_adjust;
+            var temp_count = 0;
+
             if(temp_value.name === "Daily Minimum Temperature") {
-                temperature_obj["min_temp"] += temp_value.value;
-                min_temp_count++;
+                temp_to_adjust = "min_temp";
             } else if(temp_value.name === "Daily Maximum Temperature") {
-                temperature_obj["max_temp"] += temp_value.value;
-                max_temp_count++;
+                temp_to_adjust = "max_temp";
+            } else {
+                continue;
+            }
+
+            console.log(tep_value);
+
+            if(is_array(temp_value.value)) {
+                temp_value = temp_value.value;
+                for(var j = 0; j < temp_value.length; j++) {
+                    temperature_obj[temp_to_adjust] += parseInt(temp_value[j]["#"]);
+                    temp_count++;
+                }
+                temperature_obj[temp_to_adjust] = temp_count === 0 ? undefined : Math.round(temperature_obj[temp_to_adjust] / temp_count);
+            } else {
+                temperature_obj[temp_to_adjust] = parseInt(temp_value.value);
             }
         }
-        temperature_obj["max_temp"] = max_temp_count == 0 ? undefined : temperature_obj["max_temp"] / max_temp_count;
-        temperature_obj["min_temp"] = min_temp_count == 0 ? undefined : temperature_obj["min_temp"] / min_temp_count;
     } else {
         temperature_obj["temp"] = parseInt(resp_temperature_obj.value);
     }
 
+    console.log(merge_objects(temperature_obj, precip_prob_obj));
     return merge_objects(temperature_obj, precip_prob_obj);
-
-    /*
-    var temp;
-    // there is only one temperature, so its not an array
-    if(!response_params.temperature[0]){
-        temp = parseInt(response_params.temperature.value);
-
-        return {
-            temp: temp,
-            precip: precip_prob
-        };
-    } else {
-        var max_temp = parseInt(response_params.temperature[0].value);
-        var min_temp = parseInt(response_params.temperature[1].value);
-        var mean_temp = (max_temp + min_temp) / 2;
-
-        return {
-            max: max_temp,
-            min: min_temp,
-            mean: mean_temp,
-            precip: precip_prob
-        };
-    }
-    */
 }
 
 function is_array(obj) {
-    return obj.length ? true : false;
+    return obj.shift ? true : false;
 }
 
 function merge_objects(obj1, obj2) {
