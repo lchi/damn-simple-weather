@@ -2,6 +2,6 @@ Weather for: <%=zip%>  on <%=today%> <br /><br />
 <% if(weather.temp) { %>
   <%=weather.temp%>F <br />
 <% } else { %>
-  <%=weather.min%>-<%=weather.max%>F <br />
+  <%=weather.min_temp%>-<%=weather.max_temp%>F <br />
 <% } %>
 <%=weather.precip%>% chance of precipitation
