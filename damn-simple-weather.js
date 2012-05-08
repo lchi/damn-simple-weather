@@ -47,7 +47,7 @@ function render_weather(zip, res, error, weather) {
 
 function get_weather(res, zip, callback) {
     if(cache["z" + zip] !== undefined) {
-        console.log("cache hit");
+        //console.log("cache hit");
         callback(zip, res, null, cache["z" + zip]);
     } else {
         request(NOAA_weather_api_str(zip), function (error, response, body) {
@@ -58,7 +58,7 @@ function get_weather(res, zip, callback) {
                     } else if(result.error) {
                         callback(zip, res, "API error " + result.error);
                     } else if(result && result.data) {
-                        console.log("cache miss");
+                        //console.log("cache miss");
                         weather = parse_NOAA_response(result);
                         cache["z" + zip] = weather;
                         callback(zip, res, null, weather);
@@ -111,8 +111,6 @@ function parse_NOAA_response(response) {
                 continue;
             }
 
-            console.log(tep_value);
-
             if(is_array(temp_value.value)) {
                 temp_value = temp_value.value;
                 for(var j = 0; j < temp_value.length; j++) {
@@ -128,7 +126,6 @@ function parse_NOAA_response(response) {
         temperature_obj["temp"] = parseInt(resp_temperature_obj.value);
     }
 
-    console.log(merge_objects(temperature_obj, precip_prob_obj));
     return merge_objects(temperature_obj, precip_prob_obj);
 }
 
